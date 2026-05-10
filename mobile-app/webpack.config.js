@@ -51,5 +51,28 @@ module.exports = async function (env, argv) {
     /socks/,
   ];
 
+  config.module.rules.forEach(rule => {
+    if (rule.oneOf) {
+      // Find the rule handling font files and override the public path.
+      // expo-webpack-config's file-loader for fonts usually targets node_modules output.
+      rule.oneOf.forEach(oneOfRule => {
+        if (oneOfRule.use && oneOfRule.use.loader && oneOfRule.use.loader.includes('file-loader') && oneOfRule.test && oneOfRule.test.toString().includes('ttf')) {
+           oneOfRule.use.options.publicPath = '';
+        }
+      });
+    }
+  });
+
+  // Specifically intercept @expo/vector-icons fonts to point to our custom directory
+  config.plugins.push(
+    new webpack.NormalModuleReplacementPlugin(
+      /@expo\/vector-icons\/.*\.ttf/,
+      (resource) => {
+        // Point to empty module to avoid webpack loading the .ttf file
+        resource.request = path.resolve(__dirname, 'emptyModule.js');
+      }
+    )
+  );
+
   return config;
 };
