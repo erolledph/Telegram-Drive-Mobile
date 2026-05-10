@@ -30,6 +30,12 @@ const GRAMJS_CRYPTO_ORIGINAL = path.join(
 );
 
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  // If we are on web, redirect @expo/vector-icons fonts to empty modules
+  // because we are loading them via CSS manually
+  if (platform === 'web' && moduleName.endsWith('.ttf') && context.originModulePath && context.originModulePath.includes('@expo/vector-icons')) {
+    return { filePath: require.resolve('./emptyModule.js'), type: 'sourceFile' };
+  }
+
   // Redirect GramJS's internal crypto to our patched version
   const defaultResolved = (() => {
     try {
